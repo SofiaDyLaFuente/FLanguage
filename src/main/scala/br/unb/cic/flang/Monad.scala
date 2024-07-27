@@ -1,29 +1,36 @@
 package br.unb.cic.flang
 
+import cats.data.State
+import cats.implicits._
+
 package object StateMonad {
   type S = List[(String, Integer)]
 
-  case class M[A](f: S => (A, S))
+  // Definição da Monad
+  type M[A] = State[S, A]
 
-  def pure[A](a: A): M[A] = M[A] { s => (a, s) }
+  // Cria uma instância de M que contém o valor a e não altera o estado
+  def pure[A](a: A): M[A] = State.pure(a)
 
-  def bind[A, B](m: M[A])(f: A => M[B]): M[B] = M({ s: S =>
-    {
-      val (a, s1) = runState(m)(s)
-      val (b, s2) = runState(f(a))(s1)
-      (b, s2)
-    }
-  })
+  // Usa flatMap para encadear operações na Monad de Estado
+  def bind[A, B](m: M[A])(f: A => M[B]): M[B] = m.flatMap(f)
 
-  def runState[A](s: M[A]): (S => (A, S)) = s.f
+  // Extrai o estado e o resultado.
+  def runState[A](stateM: M[A]): S => (S, A) = stateM.run(_).value
 
-  def put(s: S): M[Unit] = M({ _: S => ((), s) })
+  // Atualiza o estado com um novo valor
+  def put(s: S): M[Unit] = State.set(s)
 
-  def get[A](): M[S] = M({ s: S => (s, s) })
+  // Retorna o estado atual
+  def get(): M[S] = State.get
 
+// Funções Auxiliares:
+
+  // Adiciona uma variável ao estado, retornando o novo estado com o par (name, value) adicionado.
   def declareVar(name: String, value: Integer, state: S): S =
     (name, value) :: state
 
+  // Procura o valor associado a um nome no estado
   def lookupVar(name: String, state: S): Integer = state match {
     case List()                      => ???
     case (n, v) :: tail if n == name => v
