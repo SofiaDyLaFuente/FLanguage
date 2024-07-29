@@ -1,7 +1,8 @@
 package br.unb.cic.flang
 
-import Declarations._
-import StateMonad._
+import br.unb.cic.flang.Declarations._
+import br.unb.cic.flang.StateMonad._
+import cats.data.State
 
 object Interpreter {
 
@@ -20,27 +21,39 @@ object Interpreter {
     * Sections 6.3 and 6.4 improves this implementation. We will left such an
     * improvements as an exercise.
     */
-  def eval(expr: Expr, declarations: List[FDeclaration]): M[Integer] =
+
+  def eval(expr: Expr, declarations: List[FDeclaration]): State[S, Int] =
     expr match {
-      case CInt(v) => pure(v)
+
+      case CInt(v) => State.pure(v)
+
       case Add(lhs, rhs) =>
-        bind(eval(lhs, declarations))({ l =>
-          bind(eval(rhs, declarations))({ r => pure(l + r) })
-        })
+        for {
+          l <- eval(lhs, declarations)
+          r <- eval(rhs, declarations)
+        } yield l + r
+
       case Mul(lhs, rhs) =>
-        bind(eval(lhs, declarations))({ l =>
-          bind(eval(rhs, declarations))({ r => pure(l * r) })
-        })
-      case Id(name) => bind(get())({ state => pure(lookupVar(name, state)) })
+        for {
+          l <- eval(lhs, declarations)
+          r <- eval(rhs, declarations)
+        } yield l * r
+
+      case Id(name) =>
+        for {
+          state <- get()
+          value = lookupVar(name, state)
+        } yield value
+
       case App(name, arg) => {
         val fdecl = lookup(name, declarations)
-        bind(eval(arg, declarations))({ value =>
-          bind(get())({ s1 =>
-            bind(put(declareVar(fdecl.arg, value, s1)))({ s2 =>
-              eval(fdecl.body, declarations)
-            })
-          })
-        })
+        for {
+          value <- eval(arg, declarations)
+          state1 <- get()
+          newState = declareVar(fdecl.arg, value, state1)
+          _ <- put(newState)
+          result <- eval(fdecl.body, declarations)
+        } yield result
       }
     }
 }
