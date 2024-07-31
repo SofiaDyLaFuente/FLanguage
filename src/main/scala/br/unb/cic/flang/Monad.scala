@@ -18,10 +18,12 @@ object MonadTransformers {
   def declareVar(name: String, value: Integer, state: List[(String, Integer)]): List[(String, Integer)] =
     (name, value) :: state
 
-  def lookupVar(name: String, state: List[(String, Integer)]): ErrorOr[Integer] = state match {
-    case List()                      => Left(s"Variable $name not found")
-    case (n, v) :: tail if n == name => Right(v)
-    case _ :: tail                   => lookupVar(name, tail)
-
-  }
+  def lookupVar(name: String): ErrorOrState[Integer] = for {
+    state <- get
+    value <- state match {
+      case List()                      => raiseError(s"Variable $name not found")
+      case (n, v) :: tail if n == name => pure(v)
+      case _ :: tail                   => put(tail).flatMap(_ => lookupVar(name))
+    }
+  } yield value
 }

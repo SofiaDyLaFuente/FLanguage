@@ -1,12 +1,11 @@
 package br.unb.cic.flang
 
-import cats.data.StateT
-import cats.implicits._
 import br.unb.cic.flang.Declarations._
 import br.unb.cic.flang.MonadTransformers._
+import cats.implicits._
 
 object Interpreter {
-  def eval(expr: Expr, declarations: List[FDeclaration]): ErrorOrState[Int] = expr match {
+  def eval(expr: Expr, declarations: List[FDeclaration]): ErrorOrState[Integer] = expr match {
     case CInt(v) => pure(v)
 
     case Add(lhs, rhs) => for {
@@ -19,10 +18,7 @@ object Interpreter {
       r <- eval(rhs, declarations)
     } yield l * r
 
-    case Id(name) => for {
-      state <- get
-      value <- StateT.liftF(lookupVar(name, state))
-    } yield value
+    case Id(name) => lookupVar(name)
 
     case App(name, arg) => for {
       fdecl <- lookup(name, declarations)
