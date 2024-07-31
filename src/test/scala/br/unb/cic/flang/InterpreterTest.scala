@@ -1,12 +1,11 @@
 package br.unb.cic.flang
 
+import br.unb.cic.flang.Declarations._
+import br.unb.cic.flang.Interpreter._
+import br.unb.cic.flang.MonadTransformers._
 import org.scalatest._
-import flatspec._
-import matchers._
-
-import Interpreter._
-import Declarations._
-import MErr._
+import org.scalatest.flatspec._
+import org.scalatest.matchers._
 
 class InterpreterTest extends AnyFlatSpec with should.Matchers {
 
@@ -15,47 +14,56 @@ class InterpreterTest extends AnyFlatSpec with should.Matchers {
 
   val declarations = List(inc, bug)
 
+  val initialState: List[(String, Integer)] = List()
+
   "eval CInt(5)" should "return an integer value 5." in {
     val c5 = CInt(5)
-    eval(c5, declarations) should be (Right(5))
+    val result = eval(c5, declarations).runA(initialState)
+    result should be (Right(5))
   }
 
   "eval Add(CInt(5), CInt(10)) " should "return an integer value 15." in {
     val c5  = CInt(5)
     val c10 = CInt(10)
     val add = Add(c5, c10)
-    eval(add, declarations) should be (Right(15))
+    val result = eval(add, declarations).runA(initialState)
+    result should be (Right(15))
   }
 
   "eval Add(CInt(5), Add(CInt(5), CInt(10))) " should "return an integer value 20." in {
     val c5 = CInt(5)
     val c10 = CInt(10)
     val add = Add(c5, Add(c5, c10))
-    eval(add, declarations) should be(Right(20))
+    val result = eval(add, declarations).runA(initialState)
+    result should be(Right(20))
   }
 
   "eval Mul(CInt(5), CInt(10))" should "return an integer value 50" in {
     val c5 = CInt(5)
     val c10 = CInt(10)
     val mul = Mul(c5, CInt(10))
-    eval(mul, declarations) should be(Right(50))
+    val result = eval(mul, declarations).runA(initialState)
+    result should be(Right(50))
   }
 
   "eval App(inc, 99) " should "return an integer value 100" in {
     val app = App("inc", CInt(99))
-    eval(app, declarations) should be (Right(100))
+    val result = eval(app, declarations).runA(initialState)
+    result should be (Right(100))
   }
 
   "eval App(foo, 10) " should "raise an error." in {
     val app = App("foo", CInt(10))
-    assertError(eval(app, declarations)) should be (true)
+    val result = eval(app, declarations).runA(initialState)
+    result should be (Left("Function foo is not declared"))
   }
 
   "eval Add(5, App(bug, 10)) " should "raise an error." in {
     val c5  = CInt(5)
     val app = App("bug", CInt(10))
     val add = Add(c5, app)
-    assertError(eval(add, declarations)) should be (true)
+    val result = eval(add, declarations).runA(initialState)
+    result should be (Left("Variable y not found"))
   }
-  
+
 }

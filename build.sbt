@@ -11,5 +11,6 @@ libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.19"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % "test"
 
 libraryDependencies += "org.typelevel" %% "cats-core" % "2.12.0"
+libraryDependencies += "org.typelevel" %% "cats-transformers" % "2.12.0"
 
 

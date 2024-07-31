@@ -1,15 +1,27 @@
 package br.unb.cic.flang
 
-import cats.MonadError
-import cats.instances.either._
+import cats.data.StateT
+import cats.implicits._
 
-object MErr {
-  type MError[A] = Either[String, A]
+object MonadTransformers {
+  type ErrorOr[A] = Either[String, A]
+  type ErrorOrState[A] = StateT[ErrorOr, List[(String, Integer)], A]
 
-  val eh = MonadError[MError, String]
+  def pure[A](a: A): ErrorOrState[A] = StateT.pure(a)
 
-  def assertError[A](m: MError[A]) : Boolean = m match {
-    case Left(_) => true
-    case Right(_) => false  
+  def raiseError[A](msg: String): ErrorOrState[A] = StateT.liftF(Left(msg))
+
+  def get: ErrorOrState[List[(String, Integer)]] = StateT.get
+
+  def put(state: List[(String, Integer)]): ErrorOrState[Unit] = StateT.set(state)
+
+  def declareVar(name: String, value: Integer, state: List[(String, Integer)]): List[(String, Integer)] =
+    (name, value) :: state
+
+  def lookupVar(name: String, state: List[(String, Integer)]): ErrorOr[Integer] = state match {
+    case List()                      => Left(s"Variable $name not found")
+    case (n, v) :: tail if n == name => Right(v)
+    case _ :: tail                   => lookupVar(name, tail)
+
   }
 }
