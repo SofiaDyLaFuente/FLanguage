@@ -5,8 +5,11 @@ import br.unb.cic.flang.MonadTransformers._
 import cats.implicits._
 
 object Interpreter {
-  def eval(expr: Expr, declarations: List[FDeclaration]): ErrorOrState[Integer] = expr match {
+  def eval(expr: Expr, declarations: List[FDeclaration]): ErrorAndState[Integer] = expr match {
+
     case CInt(v) => pure(v)
+
+    case CBool(v) => pure(if (v) 1 else 0)
 
     case Add(lhs, rhs) => for {
       l <- eval(lhs, declarations)
@@ -27,6 +30,16 @@ object Interpreter {
       newState = declareVar(fdecl.arg, argValue, state)
       _ <- put(newState)
       result <- eval(fdecl.body, declarations)
+    } yield result
+
+    //Tive que tratar dessa forma, pois estava dando erro de Miss match em relação a int e integer
+    case IfThenElse(cond, thenBranch, elseBranch) => for {
+      condValue <- eval(cond, declarations)
+      result <- condValue match {
+        case value: Integer if value.intValue() == 1 => eval(thenBranch, declarations)
+        case value: Integer if value.intValue() == 0 => eval(elseBranch, declarations)
+        case _ => raiseError("Condition in IfThenElse is not a boolean")
+      }
     } yield result
   }
 }

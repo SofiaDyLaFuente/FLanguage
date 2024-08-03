@@ -22,6 +22,18 @@ class InterpreterTest extends AnyFlatSpec with should.Matchers {
     result should be (Right(5))
   }
 
+  "eval CBool(true)" should "return an integer value 1." in {
+    val ctrue = CBool(true)
+    val result = eval(ctrue, declarations).runA(initialState)
+    result should be (Right(1))
+  }
+
+  "eval CBool(false)" should "return an integer value 0." in {
+    val cfalse = CBool(false)
+    val result = eval(cfalse, declarations).runA(initialState)
+    result should be (Right(0))
+  }
+
   "eval Add(CInt(5), CInt(10)) " should "return an integer value 15." in {
     val c5  = CInt(5)
     val c10 = CInt(10)
@@ -64,6 +76,24 @@ class InterpreterTest extends AnyFlatSpec with should.Matchers {
     val add = Add(c5, app)
     val result = eval(add, declarations).runA(initialState)
     result should be (Left("Variable y not found"))
+  }
+
+  "eval IfThenElse(CBool(true), CInt(1), CInt(2))" should "return 1" in {
+    val ite = IfThenElse(CBool(true), CInt(1), CInt(2))
+    val result = eval(ite, declarations).runA(initialState)
+    result should be (Right(1))
+  }
+
+  "eval IfThenElse(CBool(false), CInt(1), CInt(2))" should "return 2" in {
+    val condicional = IfThenElse(CBool(false), CInt(1), CInt(2))
+    val result = eval(condicional, declarations).runA(initialState)
+    result should be (Right(2))
+  }
+
+  "eval IfThenElse(CInt(1), CInt(1), CInt(2))" should "raise an error" in {
+    val ite = IfThenElse(CInt(1), CInt(1), CInt(2))
+    val result = eval(ite, declarations).runA(initialState)
+    result should be (Left("Condition in IfThenElse is not a boolean"))
   }
 
 }
