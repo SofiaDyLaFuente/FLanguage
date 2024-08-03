@@ -90,10 +90,27 @@ class InterpreterTest extends AnyFlatSpec with should.Matchers {
     result should be (Right(2))
   }
 
-  "eval IfThenElse(CInt(1), CInt(1), CInt(2))" should "raise an error" in {
-    val ite = IfThenElse(CInt(1), CInt(1), CInt(2))
-    val result = eval(ite, declarations).runA(initialState)
-    result should be (Left("Condition in IfThenElse is not a boolean"))
+  "eval And(CBool(true), CBool(true))" should "return 1" in {
+    val andExpr = And(CBool(true), CBool(true))
+    val result = eval(andExpr, declarations).runA(initialState)
+    result should be (Right(1))
   }
 
+  "eval Or(CBool(true), CBool(false))" should "return 1" in {
+    val orExpr = Or(CBool(true), CBool(false))
+    val result = eval(orExpr, declarations).runA(initialState)
+    result should be (Right(1))
+  }
+
+  "eval Not(CBool(true))" should "return 0" in {
+    val notExpr = Not(CBool(true))
+    val result = eval(notExpr, declarations).runA(initialState)
+    result should be (Right(0))
+  }
+
+  "eval Not(CBool(false))" should "return 1" in {
+    val notExpr = Not(CBool(false))
+    val result = eval(notExpr, declarations).runA(initialState)
+    result should be (Right(1))
+  }
 }

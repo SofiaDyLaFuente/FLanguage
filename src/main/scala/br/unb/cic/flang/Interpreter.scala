@@ -32,14 +32,24 @@ object Interpreter {
       result <- eval(fdecl.body, declarations)
     } yield result
 
-    //Tive que tratar dessa forma, pois estava dando erro de Miss match em relação a int e integer
     case IfThenElse(cond, thenBranch, elseBranch) => for {
       condValue <- eval(cond, declarations)
-      result <- condValue match {
-        case value: Integer if value.intValue() == 1 => eval(thenBranch, declarations)
-        case value: Integer if value.intValue() == 0 => eval(elseBranch, declarations)
-        case _ => raiseError("Condition in IfThenElse is not a boolean")
-      }
+      booleanCond <- if (condValue == 0) pure(false) else if (condValue == 1) pure(true) else raiseError("Condition in IfThenElse is not a boolean")
+      result <- if (booleanCond) eval(thenBranch, declarations) else eval(elseBranch, declarations)
     } yield result
+
+    case And(lhs, rhs) => for {
+      l <- eval(lhs, declarations)
+      r <- eval(rhs, declarations)
+    } yield if (l == 1 && r == 1) 1 else 0
+
+    case Or(lhs, rhs) => for {
+      l <- eval(lhs, declarations)
+      r <- eval(rhs, declarations)
+    } yield if (l == 1 || r == 1) 1 else 0
+
+    case Not(expr) => for {
+      value <- eval(expr, declarations)
+    } yield if (value == 0) 1 else 0
   }
 }
