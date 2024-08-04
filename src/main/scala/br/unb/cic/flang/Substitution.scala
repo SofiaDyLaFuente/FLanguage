@@ -24,6 +24,14 @@ object Substitution {
         substitute(what, name, thenBranch),
         substitute(what, name, elseBranch)
       )
-  }
 
+    case And(lhs, rhs) =>
+      And(substitute(what, name, lhs), substitute(what, name, rhs))
+
+    case Or(lhs, rhs) =>
+      Or(substitute(what, name, lhs), substitute(what, name, rhs))
+
+    case Not(expr) =>
+      Not(substitute(what, name, expr))
+  }
 }
