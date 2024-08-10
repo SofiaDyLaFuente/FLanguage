@@ -1,68 +1,54 @@
 package br.unb.cic.flang
 
-import cats.parse.Rfc5234.{alpha, digit}
-import cats.parse.{Parser, Parser0}
+import scala.util.parsing.combinator._
+
+class FLParser extends RegexParsers {
+
+  // Espaços em branco opcionais
+  override def skipWhitespace = true
+
+  // Parser para expressões
+  def expr: Parser[Expr] = ifThenElse | add | mul | bool | const | ident | app
+
+  // Parser para inteiros
+  def const: Parser[Expr] = """(0|[1-9]\d*)""".r ^^ { case n => CInt(n.toInt) }
+
+  // Parser para booleanos
+  def bool: Parser[Expr] = ("true" | "false") ^^ {
+    case "true" => CBool(true)
+    case "false" => CBool(false)
+  }
+
+  // Parser para identificadores
+  def ident: Parser[Expr] = """[a-zA-Z_]\w*""".r ^^ { case name => Id(name) }
+
+  // Parser para soma: soma(3, 2)
+  def add: Parser[Expr] = "soma" ~ "(" ~ expr ~ "," ~ expr ~ ")" ^^ {
+    case _ ~ _ ~ lhs ~ _ ~ rhs ~ _ => Add(lhs, rhs)
+  }
+
+  // Parser para multiplicação: mul(3, 2)
+  def mul: Parser[Expr] = "mul" ~ "(" ~ expr ~ "," ~ expr ~ ")" ^^ {
+    case _ ~ _ ~ lhs ~ _ ~ rhs ~ _ => Mul(lhs, rhs)
+  }
+
+  // Parser para if-then-else
+  def ifThenElse: Parser[Expr] = "se" ~ "(" ~ expr ~ ")" ~ "então" ~ expr ~ "senão" ~ expr ^^ {
+    case _ ~ _ ~ cond ~ _ ~ _ ~ e1 ~ _ ~ e2 => IfThenElse(cond, e1, e2)
+  }
+
+  // Parser para aplicação de função: funcao(3)
+  def app: Parser[Expr] = ident ~ "(" ~ expr ~ ")" ^^ {
+    case Id(name) ~ _ ~ arg ~ _ => App(name, arg)
+  }
+}
 
 object FLangParser {
-
-  import cats.parse.Parser._
-
-  val whitespace: Parser[Unit] = charIn(" \t\r\n").rep.void
-  val whitespace0: Parser0[Unit] = whitespace.rep0.void
-
-  val int: Parser[Expr] = digit.rep.string.map(s => CInt(s.toInt)).surroundedBy(whitespace0)
-
-  val bool: Parser[Expr] =
-    (string("verdadeiro").map(_ => CBool(true)) |
-      string("falso").map(_ => CBool(false))
-      ).surroundedBy(whitespace)
-
-  val identifier: Parser[Expr] = (alpha ~ (alpha.orElse(digit).rep0)).string.map(Id).surroundedBy(whitespace0)
-
-  val add: Parser[Expr] = (
-    string("soma(") *> expr.surroundedBy(whitespace0) ~
-      (char(',') *> expr.surroundedBy(whitespace0) <* char(')'))
-    ).map { case (lhs, rhs) => Add(lhs, rhs) }
-
-  val mul: Parser[Expr] = (
-    string("multiplica(") *> expr.surroundedBy(whitespace0) ~
-      (char(',') *> expr.surroundedBy(whitespace0) <* char(')'))
-    ).map { case (lhs, rhs) => Mul(lhs, rhs) }
-
-  val ifThenElse: Parser[Expr] = for {
-    _ <- string("se(")
-    cond <- expr.surroundedBy(whitespace0)
-    _ <- string(", ")
-    thenBranch <- expr.surroundedBy(whitespace0)
-    _ <- string(", ")
-    _ <- string("entao(")
-    thenBranchParsed <- expr.surroundedBy(whitespace0)
-    _ <- string("), ")
-    _ <- string("senao(")
-    elseBranch <- expr.surroundedBy(whitespace0)
-    _ <- char(')')
-  } yield IfThenElse(cond, thenBranchParsed, elseBranch)
-
-  val and: Parser[Expr] = (
-    string("e(") *> expr.surroundedBy(whitespace0) ~
-      (char(',') *> expr.surroundedBy(whitespace0) <* char(')'))
-    ).map { case (lhs, rhs) => And(lhs, rhs) }
-
-  val or: Parser[Expr] = (
-    string("ou(") *> expr.surroundedBy(whitespace0) ~
-      (char(',') *> expr.surroundedBy(whitespace0) <* char(')'))
-    ).map { case (lhs, rhs) => Or(lhs, rhs) }
-
-  val not: Parser[Expr] = (
-    string("nao(") *> expr.surroundedBy(whitespace0) <* char(')')
-    ).map(Not)
-
-  lazy val expr: Parser[Expr] =
-    add | mul | ifThenElse | bool | int | identifier | and | or | not
-
-  // Função para analisar uma string em uma expressão
-  def parse(input: String): Either[Parser.Error, Expr] = {
-    val result = expr.parseAll(input)
-    result
+  def parse(input: String): Expr = {
+    val parser = new FLParser
+    parser.parseAll(parser.expr, input) match {
+      case parser.Success(result: Expr, _) => result
+      case parser.NoSuccess(msg, _) => throw new RuntimeException(s"Parsing failed: $msg")
+    }
   }
 }

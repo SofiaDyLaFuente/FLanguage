@@ -13,4 +13,4 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % "test"
 libraryDependencies += "org.typelevel" %% "cats-core" % "2.12.0"
 libraryDependencies += "org.typelevel" %% "cats-parse" % "0.3.9"
 
-
+libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0"

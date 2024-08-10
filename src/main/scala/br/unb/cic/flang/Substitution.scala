@@ -16,7 +16,7 @@ object Substitution {
     case Mul(lhs, rhs) =>
       Mul(substitute(what, name, lhs), substitute(what, name, rhs))
 
-    case App(n, arg) => App(n, substitute(what, n, arg))
+    case App(n, arg) => App(n, substitute(what, name, arg))
 
     case IfThenElse(cond, thenBranch, elseBranch) =>
       IfThenElse(

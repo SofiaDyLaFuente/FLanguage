@@ -1,0 +1,20 @@
+// Definições Simples
+soma = soma(2, 3)
+produto = mul(4, 5)
+
+// Definições com Condicionais
+maiorQue10 = se(soma(5, 6) > 10, true, false)
+fatorial = se(x == 0, 1, x * fatorial(x - 1))
+
+// Funções e Condicionais com Identificadores
+incrementar = soma(x, 1)
+duplicar = mul(x, 2)
+verificarPar = se(mod(x, 2) == 0, true, false)
+
+// Funções Recursivas e Composição
+fibonacci = se(n <= 1, n, fibonacci(n - 1) + fibonacci(n - 2))
+somarLista = se(lista == Nil, 0, cabeça(lista) + somarLista(calda(lista)))
+
+// Definições Complexas
+calcularMedia = soma(a, b) / 2
+calcularDesvioPadrao = sqrt((soma(lista.map(x => (x - calcularMedia) ^ 2)) / tamanho(lista)))
