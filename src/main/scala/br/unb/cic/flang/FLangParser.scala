@@ -8,7 +8,7 @@ class FLParser extends RegexParsers {
   override def skipWhitespace = true
 
   // Parser para expressões
-  def expr: Parser[Expr] = ifThenElse | add | mul | bool | const | ident | app
+  def expr: Parser[Expr] =  ifThenElse | and | or | not | add | mul | bool | const | ident | app
 
   // Parser para inteiros
   def const: Parser[Expr] = """(0|[1-9]\d*)""".r ^^ { case n => CInt(n.toInt) }
@@ -33,8 +33,24 @@ class FLParser extends RegexParsers {
   }
 
   // Parser para if-then-else
-  def ifThenElse: Parser[Expr] = "se" ~ "(" ~ expr ~ ")" ~ "então" ~ expr ~ "senão" ~ expr ^^ {
-    case _ ~ _ ~ cond ~ _ ~ _ ~ e1 ~ _ ~ e2 => IfThenElse(cond, e1, e2)
+  def ifThenElse: Parser[Expr] =
+    ("if" ~> expr) ~ ("then" ~> expr) ~ ("else" ~> expr) ^^ {
+      case cond ~ thenExpr ~ elseExpr => IfThenElse(cond, thenExpr, elseExpr)
+    }
+
+  // Parser para operação AND: and(expr1, expr2)
+  def and: Parser[Expr] = "and" ~ "(" ~ expr ~ "," ~ expr ~ ")" ^^ {
+    case _ ~ _ ~ lhs ~ _ ~ rhs ~ _ => And(lhs, rhs)
+  }
+
+  // Parser para operação OR: or(expr1, expr2)
+  def or: Parser[Expr] = "or" ~ "(" ~ expr ~ "," ~ expr ~ ")" ^^ {
+    case _ ~ _ ~ lhs ~ _ ~ rhs ~ _ => Or(lhs, rhs)
+  }
+
+  // Parser para operação NOT: not(expr)
+  def not: Parser[Expr] = "not" ~ "(" ~ expr ~ ")" ^^ {
+    case _ ~ _ ~ expr ~ _ => Not(expr)
   }
 
   // Parser para aplicação de função: funcao(3)
