@@ -16,10 +16,63 @@ object Interpreter {
       r <- eval(rhs, declarations)
     } yield l + r
 
+    case Sub(lhs, rhs) => for {
+      l <- eval(lhs, declarations)
+      r <- eval(rhs, declarations)
+    } yield l - r
+
     case Mul(lhs, rhs) => for {
       l <- eval(lhs, declarations)
       r <- eval(rhs, declarations)
     } yield l * r
+
+    case Div(lhs, rhs) => for {
+      l <- eval(lhs, declarations)
+      r <- eval(rhs, declarations)
+      result <- if (r == 0) raiseError("Division by zero") else pure(l / r)
+    } yield result
+
+    case And(lhs, rhs) => for {
+      l <- eval(lhs, declarations)
+      r <- eval(rhs, declarations)
+    } yield if (l == 1 && r == 1) 1 else 0
+
+    case Or(lhs, rhs) => for {
+      l <- eval(lhs, declarations)
+      r <- eval(rhs, declarations)
+    } yield if (l == 1 || r == 1) 1 else 0
+
+    case Not(expr) => for {
+      value <- eval(expr, declarations)
+    } yield if (value == 0) 1 else 0
+
+
+    //    case Equal(lhs, rhs) =>
+//      eval(lhs, env) == eval(rhs, env)
+
+//    case Maior(lhs, rhs) => for {
+//      l <- eval(lhs, declarations)
+//      r <- eval(rhs, declarations)
+//    } yield if (l > r) 1 else 0
+//
+//    case Menor(lhs, rhs) => for {
+//      l <- eval(lhs, declarations)
+//      r <- eval(rhs, declarations)
+//    } yield if (l < r) 1 else 0
+//
+//    case MaiorIgual(lhs, rhs) => for {
+//      l <- eval(lhs, declarations)
+//      r <- eval(rhs, declarations)
+//    } yield if (l >= r) 1 else 0
+//
+//    case MenorIgual(lhs, rhs) => for {
+//      l <- eval(lhs, declarations)
+//      r <- eval(rhs, declarations)
+//    } yield if (l <= r) 1 else 0
+//
+//    case Negativo(expr) => for {
+//      value <- eval(expr, declarations)
+//    } yield -value
 
     case Id(name) => lookupVar(name)
 
@@ -37,19 +90,5 @@ object Interpreter {
       booleanCond <- if (condValue == 0) pure(false) else if (condValue == 1) pure(true) else raiseError("Condition in IfThenElse is not a boolean")
       result <- if (booleanCond) eval(thenBranch, declarations) else eval(elseBranch, declarations)
     } yield result
-
-    case And(lhs, rhs) => for {
-      l <- eval(lhs, declarations)
-      r <- eval(rhs, declarations)
-    } yield if (l == 1 && r == 1) 1 else 0
-
-    case Or(lhs, rhs) => for {
-      l <- eval(lhs, declarations)
-      r <- eval(rhs, declarations)
-    } yield if (l == 1 || r == 1) 1 else 0
-
-    case Not(expr) => for {
-      value <- eval(expr, declarations)
-    } yield if (value == 0) 1 else 0
   }
 }
